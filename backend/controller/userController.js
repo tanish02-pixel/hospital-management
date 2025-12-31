@@ -1,205 +1,261 @@
 import { catchAsyncErrors } from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../middlewares/errorMiddleware.js";
-import { User } from "../models/userSchema.js"; 
-import {generateToken} from "../utils/jwtToken.js";
+import { User } from "../models/userSchema.js";
+import { generateToken } from "../utils/jwtToken.js";
 import cloudinary from "cloudinary";
 
+/* =======================
+   PATIENT REGISTER
+   ======================= */
+export const patientRegister = catchAsyncErrors(async (req, res, next) => {
+  const { firstName, lastName, email, phone, password, gender, dob, nic } =
+    req.body || {};
 
-export const patientRegister = catchAsyncErrors(async(req,res,next)=>{
+  if (
+    !firstName ||
+    !lastName ||
+    !email ||
+    !phone ||
+    !password ||
+    !gender ||
+    !dob ||
+    !nic
+  ) {
+    return next(new ErrorHandler("Please Fill Full Form!", 400));
+  }
 
-    const {firstName,lastName,email,phone,password,gender,dob,nic,role} = req.body || {};
-    
-    if(!firstName || !lastName || !email || !phone || ! password || !gender || !dob || !nic || !role){
-        return next(new ErrorHandler("Please Fill Full Form!",400));
-    }
+  let user = await User.findOne({ email });
+  if (user) {
+    return next(new ErrorHandler("User Already Registered!", 400));
+  }
 
-    let user = await User.findOne({email});
+  user = await User.create({
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    gender,
+    dob,
+    nic,
+    role: "Patient", // ✅ FIX: role hardcoded
+  });
 
-        if(user){
-            return next(new ErrorHandler("User Already Registered!",400)
-            );
-        }
-
-        user = await User.create({
-            firstName,
-            lastName,
-            email,
-            phone,
-            password,
-            gender,
-            dob,
-            nic,
-            role,
-        });
-
-        generateToken(user,"User Registered Successfully",201,res);
-
-})
-
-
-export const login = catchAsyncErrors(async(req,res,next)=>{
-
-    const {email,password,confirmPassword,role} = req.body || {};
-    
-    if(!email || !password || !confirmPassword || !role){
-        return next(new ErrorHandler("Please Fill Full Form!",400));
-    }
-
-      if(password !== confirmPassword){
-        return next(new ErrorHandler("Password and Confirm Password Do Not Match!",400));
-    }
-
-    const user = await User.findOne({email}).select("+password");
-    if(!user){
-        return next(new ErrorHandler("Invalid Email or Password",401));
-    }
-
-    const isPasswordMatched = await user.comparePassword(password);
-
-    if(!isPasswordMatched){
-        return next(new ErrorHandler("Invalid Email or Password",401));
-    }
-
-    if(role!== user.role){
-        return next(new ErrorHandler("Please Select The Correct Role",400));
-    }
-
-            generateToken(user,"User Login Successfully",201,res);
+  generateToken(user, "User Registered Successfully", 201, res);
 });
 
-export  const addNewAdmin = catchAsyncErrors(async(req,res,next)=>{
-const {
-            firstName,
-            lastName,
-            email,
-            phone,
-            password,
-            gender,
-            dob,
-            nic,
-} = req.body || {};
+/* =======================
+   LOGIN
+   ======================= */
+export const login = catchAsyncErrors(async (req, res, next) => {
+  const { email, password, confirmPassword, role } = req.body || {};
 
-    if(!firstName || !lastName || !email || !phone || ! password || !gender || !dob || !nic ){
-        return next(new ErrorHandler("Please Fill Full Form!",400));
-    }
+  if (!email || !password || !confirmPassword || !role) {
+    return next(new ErrorHandler("Please Fill Full Form!", 400));
+  }
 
-    const isRegistered = await User.findOne({email});
-    if(isRegistered){
-        return next(new ErrorHandler(`${isRegistered.role} Already Registered!`,400))
-    }
-    const admin = await User.create({
-        firstName,
-        lastName,
-        email,
-        phone,
-        password,
-        gender,
-        dob,
-        nic,
-        role:"Admin",
-    });
-    res.status(201).json({
-        success:true,
-        message:"New Admin Added Successfully",
-    });
-})
-
-export const getAllDoctors = catchAsyncErrors(async(req,res,next)=>{
-    const doctors = await User.find({role:"Doctor"});
-    res.status(200).json({
-        success:true,
-        doctors,
-    });
-})
-
-
-export const getUserDetails = catchAsyncErrors(async(req,res,next)=>{
-    const user = req.user;
-    res.status(200).json({
-        success:true,
-        user,
-    });
-})
-
-export const logoutAdmin = catchAsyncErrors(async(req,res,next)=>{
-    res.status(200).cookie("adminToken","",{
-        httpOnly:true,
-        expires:new Date(Date.now()),
-
-    }).json({
-        success:true,
-        message:"Admin Logged Out Successfully",
-    }
+  if (password !== confirmPassword) {
+    return next(
+      new ErrorHandler("Password and Confirm Password Do Not Match!", 400)
     );
+  }
+
+  const user = await User.findOne({ email }).select("+password");
+  if (!user) {
+    return next(new ErrorHandler("Invalid Email or Password", 401));
+  }
+
+  const isPasswordMatched = await user.comparePassword(password);
+  if (!isPasswordMatched) {
+    return next(new ErrorHandler("Invalid Email or Password", 401));
+  }
+
+  if (role !== user.role) {
+    return next(new ErrorHandler("Please Select The Correct Role", 400));
+  }
+
+  generateToken(user, "User Login Successfully", 200, res);
 });
 
+/* =======================
+   ADD NEW ADMIN
+   ======================= */
+export const addNewAdmin = catchAsyncErrors(async (req, res, next) => {
+  const { firstName, lastName, email, phone, password, gender, dob, nic } =
+    req.body || {};
 
-export const logoutPatient = catchAsyncErrors(async(req,res,next)=>{
-    res.status(200).cookie("patientToken","",{
-        httpOnly:true,
-        expires:new Date(Date.now()),
-        
-    }).json({
-        success:true,
-        message:"Patient Logged Out Successfully",
-    }
+  if (
+    !firstName ||
+    !lastName ||
+    !email ||
+    !phone ||
+    !password ||
+    !gender ||
+    !dob ||
+    !nic
+  ) {
+    return next(new ErrorHandler("Please Fill Full Form!", 400));
+  }
+
+  const isRegistered = await User.findOne({ email });
+  if (isRegistered) {
+    return next(
+      new ErrorHandler(`${isRegistered.role} Already Registered!`, 400)
     );
+  }
+
+  await User.create({
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    gender,
+    dob,
+    nic,
+    role: "Admin",
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "New Admin Added Successfully",
+  });
 });
 
+/* =======================
+   GET ALL DOCTORS
+   ======================= */
+export const getAllDoctors = catchAsyncErrors(async (req, res, next) => {
+  const doctors = await User.find({ role: "Doctor" });
+  res.status(200).json({
+    success: true,
+    doctors,
+  });
+});
 
-export const addNewDoctor = catchAsyncErrors(async(req,res,next)=>{
-    if(!req.files || Object.keys(req.files).length === 0){
-return next(new ErrorHandler("Doctor Avatar is required",400));
-    }
+/* =======================
+   GET USER DETAILS
+   ======================= */
+export const getUserDetails = catchAsyncErrors(async (req, res, next) => {
+  res.status(200).json({
+    success: true,
+    user: req.user,
+  });
+});
 
-    const {docAvatar} = req.files;
-    const allowedFormats = ["image/jpeg","image/jpg","image/png","image/webp"];
-    if(!allowedFormats.includes(docAvatar.mimetype)){
-        return next(new ErrorHandler("Only JPEG, JPG, and PNG formats are allowed for Doctor Avatar",400));
-    }
-    const {  firstName,
-        lastName,
-        email,
-        phone,
-        password,
-        gender,
-        dob,
-        nic,
-    doctorDepartment} = req.body || {};
-
-    if(!firstName || !lastName || !email || !phone || ! password || ! gender || !dob || !nic || !doctorDepartment)
-    {
-        return next(new ErrorHandler("Please Fill Full Form!",400));
-    }
-    const isRegistered = await User.findOne({email});
-    if(isRegistered){
-        return next(new ErrorHandler(`${isRegistered.role} Already Registered!`,400))
-    }
-
-const cloudinaryResponse = await cloudinary.uploader.upload(docAvatar.tempFilePath);
-if(!cloudinaryResponse || cloudinaryResponse.error){
-    console.error("Cloudinary Error:", cloudinaryResponse.error || "Unknown error");
-}
-const doctor = await User.create({
-        firstName,
-        lastName,
-        email,
-        phone,
-        password,
-        gender,
-        dob,
-        nic,
-        doctorDepartment,
-        role:"Doctor",
-        docAvatar:{
-            public_id:cloudinaryResponse.public_id,
-            url:cloudinaryResponse.secure_url,
-        },
+/* =======================
+   LOGOUT ADMIN
+   ======================= */
+export const logoutAdmin = catchAsyncErrors(async (req, res, next) => {
+  res
+    .status(200)
+    .cookie("adminToken", "", {
+      httpOnly: true,
+      secure: true,        // ✅ FIX
+      sameSite: "None",    // ✅ FIX
+      expires: new Date(Date.now()),
+    })
+    .json({
+      success: true,
+      message: "Admin Logged Out Successfully",
     });
-    res.status(201).json({
-        success:true,
-        message:"New Doctor Added Successfully",
-        doctor,
-})
+});
 
+/* =======================
+   LOGOUT PATIENT
+   ======================= */
+export const logoutPatient = catchAsyncErrors(async (req, res, next) => {
+  res
+    .status(200)
+    .cookie("patientToken", "", {
+      httpOnly: true,
+      secure: true,        // ✅ FIX
+      sameSite: "None",    // ✅ FIX
+      expires: new Date(Date.now()),
+    })
+    .json({
+      success: true,
+      message: "Patient Logged Out Successfully",
+    });
+});
+
+/* =======================
+   ADD NEW DOCTOR
+   ======================= */
+export const addNewDoctor = catchAsyncErrors(async (req, res, next) => {
+  if (!req.files || Object.keys(req.files).length === 0) {
+    return next(new ErrorHandler("Doctor Avatar is required", 400));
+  }
+
+  const { docAvatar } = req.files;
+  const allowedFormats = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+  if (!allowedFormats.includes(docAvatar.mimetype)) {
+    return next(
+      new ErrorHandler(
+        "Only JPEG, JPG, PNG, and WEBP formats are allowed",
+        400
+      )
+    );
+  }
+
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    gender,
+    dob,
+    nic,
+    doctorDepartment,
+  } = req.body || {};
+
+  if (
+    !firstName ||
+    !lastName ||
+    !email ||
+    !phone ||
+    !password ||
+    !gender ||
+    !dob ||
+    !nic ||
+    !doctorDepartment
+  ) {
+    return next(new ErrorHandler("Please Fill Full Form!", 400));
+  }
+
+  const isRegistered = await User.findOne({ email });
+  if (isRegistered) {
+    return next(
+      new ErrorHandler(`${isRegistered.role} Already Registered!`, 400)
+    );
+  }
+
+  const cloudinaryResponse = await cloudinary.uploader.upload(
+    docAvatar.tempFilePath
+  );
+
+  const doctor = await User.create({
+    firstName,
+    lastName,
+    email,
+    phone,
+    password,
+    gender,
+    dob,
+    nic,
+    doctorDepartment,
+    role: "Doctor",
+    docAvatar: {
+      public_id: cloudinaryResponse.public_id,
+      url: cloudinaryResponse.secure_url,
+    },
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "New Doctor Added Successfully",
+    doctor,
+  });
 });
