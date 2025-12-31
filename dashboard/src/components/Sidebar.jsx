@@ -6,31 +6,25 @@ import { GiHamburgerMenu } from "react-icons/gi";
 import { FaUserDoctor } from "react-icons/fa6";
 import { MdAddModerator } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { Context } from "../main";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
 const Sidebar = () => {
   const [show, setShow] = useState(false);
-
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
+  const navigateTo = useNavigate();
 
   const handleLogout = async () => {
-    await axios
-      .get("http://localhost:4000/api/v1/user/admin/logout", {
-        withCredentials: true,
-      })
-      .then((res) => {
-        toast.success(res.data.message);
-        setIsAuthenticated(false);
-      })
-      .catch((err) => {
-        toast.error(err.response.data.message);
-      });
+    try {
+      const res = await api.get("/api/v1/user/admin/logout");
+      toast.success(res.data.message);
+      setIsAuthenticated(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Logout failed");
+    }
   };
-
-  const navigateTo = useNavigate();
 
   const gotoHomePage = () => {
     navigateTo("/");
@@ -68,11 +62,15 @@ const Sidebar = () => {
           <RiLogoutBoxFill onClick={handleLogout} />
         </div>
       </nav>
+
       <div
         className="wrapper"
         style={!isAuthenticated ? { display: "none" } : { display: "flex" }}
       >
-        <GiHamburgerMenu className="hamburger" onClick={() => setShow(!show)} />
+        <GiHamburgerMenu
+          className="hamburger"
+          onClick={() => setShow(!show)}
+        />
       </div>
     </>
   );

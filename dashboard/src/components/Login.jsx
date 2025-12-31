@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { Context } from "../main";
-import axios from "axios";
+import api from "../api/axios";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -10,36 +10,31 @@ const Login = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
-
   const navigateTo = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await axios
-        .post(
-          "http://localhost:4000/api/v1/user/login",
-          { email, password, confirmPassword, role: "Admin" },
-          {
-            withCredentials: true,
-            headers: { "Content-Type": "application/json" },
-          }
-        )
-        .then((res) => {
-          toast.success(res.data.message);
-          setIsAuthenticated(true);
-          navigateTo("/");
-          setEmail("");
-          setPassword("");
-          setConfirmPassword("");
-        });
+      const res = await api.post("/api/v1/user/login", {
+        email,
+        password,
+        confirmPassword,
+        role: "Admin",
+      });
+
+      toast.success(res.data.message);
+      setIsAuthenticated(true);
+      navigateTo("/");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Login failed");
     }
   };
 
   if (isAuthenticated) {
-    return <Navigate to={"/"} />;
+    return <Navigate to="/" />;
   }
 
   return (
@@ -48,6 +43,7 @@ const Login = () => {
         <img src="/Sukoonlogo.png" alt="logo" className="logo" />
         <h1 className="form-title">WELCOME TO SUKOON</h1>
         <p>Only Admins Are Allowed To Access These Resources!</p>
+
         <form onSubmit={handleLogin}>
           <input
             type="text"
@@ -67,6 +63,7 @@ const Login = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
+
           <div style={{ justifyContent: "center", alignItems: "center" }}>
             <button type="submit">Login</button>
           </div>
