@@ -1,7 +1,6 @@
-import axios from "axios";
-import React, { useEffect } from "react";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import api from "../api/axios";
 
 const AppointmentForm = () => {
   const [firstName, setFirstName] = useState("");
@@ -31,59 +30,55 @@ const AppointmentForm = () => {
   ];
 
   const [doctors, setDoctors] = useState([]);
+
   useEffect(() => {
     const fetchDoctors = async () => {
-      const { data } = await axios.get(
-        "http://localhost:4000/api/v1/user/doctors",
-        { withCredentials: true }
-      );
-      setDoctors(data.doctors);
-      console.log(data.doctors);
+      try {
+        const { data } = await api.get("/api/v1/user/doctors");
+        setDoctors(data.doctors);
+      } catch (error) {
+        toast.error("Failed to load doctors");
+      }
     };
     fetchDoctors();
   }, []);
+
   const handleAppointment = async (e) => {
     e.preventDefault();
     try {
-      const hasVisitedBool = Boolean(hasVisited);
-      const { data } = await axios.post(
-        "http://localhost:4000/api/v1/appointment/post",
-        {
-          firstName,
-          lastName,
-          email,
-          phone,
-          nic,
-          dob,
-          gender,
-          appointment_date: appointmentDate,
-          department,
-          doctor_firstName: doctorFirstName,
-          doctor_lastName: doctorLastName,
-          hasVisited: hasVisitedBool,
-          address,
-        },
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      const { data } = await api.post("/api/v1/appointment/post", {
+        firstName,
+        lastName,
+        email,
+        phone,
+        nic,
+        dob,
+        gender,
+        appointment_date: appointmentDate,
+        department,
+        doctor_firstName: doctorFirstName,
+        doctor_lastName: doctorLastName,
+        hasVisited,
+        address,
+      });
+
       toast.success(data.message);
-      setFirstName(""),
-        setLastName(""),
-        setEmail(""),
-        setPhone(""),
-        setNic(""),
-        setDob(""),
-        setGender(""),
-        setAppointmentDate(""),
-        setDepartment(""),
-        setDoctorFirstName(""),
-        setDoctorLastName(""),
-        setHasVisited(""),
-        setAddress("");
+
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPhone("");
+      setNic("");
+      setDob("");
+      setGender("");
+      setAppointmentDate("");
+      setDepartment("Pediatrics");
+      setDoctorFirstName("");
+      setDoctorLastName("");
+      setHasVisited(false);
+      setAddress("");
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Appointment failed");
     }
   };
 
@@ -91,6 +86,7 @@ const AppointmentForm = () => {
     <>
       <div className="container form-component appointment-form">
         <h2>Appointment</h2>
+
         <form onSubmit={handleAppointment}>
           <div>
             <input
@@ -106,6 +102,7 @@ const AppointmentForm = () => {
               onChange={(e) => setLastName(e.target.value)}
             />
           </div>
+
           <div>
             <input
               type="text"
@@ -120,6 +117,7 @@ const AppointmentForm = () => {
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
+
           <div>
             <input
               type="number"
@@ -134,12 +132,14 @@ const AppointmentForm = () => {
               onChange={(e) => setDob(e.target.value)}
             />
           </div>
+
           <div>
             <select value={gender} onChange={(e) => setGender(e.target.value)}>
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
             </select>
+
             <input
               type="date"
               placeholder="Appointment Date"
@@ -147,6 +147,7 @@ const AppointmentForm = () => {
               onChange={(e) => setAppointmentDate(e.target.value)}
             />
           </div>
+
           <div>
             <select
               value={department}
@@ -156,35 +157,13 @@ const AppointmentForm = () => {
                 setDoctorLastName("");
               }}
             >
-              {departmentsArray.map((depart, index) => {
-                return (
-                  <option value={depart} key={index}>
-                    {depart}
-                  </option>
-                );
-              })}
+              {departmentsArray.map((depart, index) => (
+                <option value={depart} key={index}>
+                  {depart}
+                </option>
+              ))}
             </select>
-            {/* <select
-              value={`${doctorFirstName} ${doctorLastName}`}
-              onChange={(e) => {
-                const [firstName, lastName] = e.target.value.split(" ");
-                setDoctorFirstName(firstName);
-                setDoctorLastName(lastName);
-              }}
-              disabled={!department}
-            >
-              <option value="">Select Doctor</option>
-              {doctors
-                .filter((doctor) => doctor.doctorDepartment === department)
-                .map((doctor, index) => (
-                  <option
-                    value={`${doctor.firstName} ${doctor.lastName}`}
-                    key={index}
-                  >
-                    {doctor.firstName} {doctor.lastName}
-                  </option>
-                ))}
-            </select> */}
+
             <select
               value={JSON.stringify({
                 firstName: doctorFirstName,
@@ -213,12 +192,14 @@ const AppointmentForm = () => {
                 ))}
             </select>
           </div>
+
           <textarea
             rows="10"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="Address"
           />
+
           <div
             style={{
               gap: "10px",
@@ -234,6 +215,7 @@ const AppointmentForm = () => {
               style={{ flex: "none", width: "25px" }}
             />
           </div>
+
           <button style={{ margin: "0 auto" }}>GET APPOINTMENT</button>
         </form>
       </div>

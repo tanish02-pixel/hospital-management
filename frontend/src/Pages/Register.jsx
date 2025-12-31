@@ -1,8 +1,8 @@
-import axios from "axios";
 import React, { useContext, useState } from "react";
 import { toast } from "react-toastify";
 import { Context } from "../main";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
 const Register = () => {
   const { isAuthenticated, setIsAuthenticated } = useContext(Context);
@@ -21,35 +21,36 @@ const Register = () => {
   const handleRegistration = async (e) => {
     e.preventDefault();
     try {
-      await axios
-        .post(
-          "http://localhost:4000/api/v1/user/patient/register",
-          { firstName, lastName, email, phone, nic, dob, gender, password },
-          {
-            withCredentials: true,
-            headers: { "Content-Type": "application/json" },
-          }
-        )
-        .then((res) => {
-          toast.success(res.data.message);
-          setIsAuthenticated(true);
-          navigateTo("/");
-          setFirstName("");
-          setLastName("");
-          setEmail("");
-          setPhone("");
-          setNic("");
-          setDob("");
-          setGender("");
-          setPassword("");
-        });
+      const res = await api.post("/api/v1/user/patient/register", {
+        firstName,
+        lastName,
+        email,
+        phone,
+        nic,
+        dob,
+        gender,
+        password,
+      });
+
+      toast.success(res.data.message);
+      setIsAuthenticated(true);
+      navigateTo("/");
+
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPhone("");
+      setNic("");
+      setDob("");
+      setGender("");
+      setPassword("");
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Registration failed");
     }
   };
 
   if (isAuthenticated) {
-    return <Navigate to={"/"} />;
+    return <Navigate to="/" />;
   }
 
   return (
@@ -57,9 +58,7 @@ const Register = () => {
       <div className="container form-component register-form">
         <h2>Sign Up</h2>
         <p>Please Sign Up To Continue</p>
-        <p>
-  Experience seamless healthcare services at Sukoon.
-</p>
+        <p>Experience seamless healthcare services at Sukoon.</p>
 
         <form onSubmit={handleRegistration}>
           <div>
@@ -76,6 +75,7 @@ const Register = () => {
               onChange={(e) => setLastName(e.target.value)}
             />
           </div>
+
           <div>
             <input
               type="text"
@@ -90,6 +90,7 @@ const Register = () => {
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
+
           <div>
             <input
               type="number"
@@ -98,12 +99,13 @@ const Register = () => {
               onChange={(e) => setNic(e.target.value)}
             />
             <input
-              type={"date"}
+              type="date"
               placeholder="Date of Birth"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
             />
           </div>
+
           <div>
             <select value={gender} onChange={(e) => setGender(e.target.value)}>
               <option value="">Select Gender</option>
@@ -117,6 +119,7 @@ const Register = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+
           <div
             style={{
               gap: "10px",
@@ -126,12 +129,13 @@ const Register = () => {
           >
             <p style={{ marginBottom: 0 }}>Already Registered?</p>
             <Link
-              to={"/login"}
+              to="/login"
               style={{ textDecoration: "none", color: "#271776ca" }}
             >
               Login Now
             </Link>
           </div>
+
           <div style={{ justifyContent: "center", alignItems: "center" }}>
             <button type="submit">Register</button>
           </div>
