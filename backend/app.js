@@ -15,6 +15,8 @@ config({ path: "./config/config.env" });
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.DASHBOARD_URL,
+  "https://hospital-management-tau-orpin.vercel.app",
+  "https://hospital-management-5pho.vercel.app",
 ];
 
 app.use(
