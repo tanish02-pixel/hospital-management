@@ -21,16 +21,18 @@ const Register = () => {
   const handleRegistration = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/api/v1/user/patient/register", {
-        firstName,
-        lastName,
-        email,
-        phone,
-        nic,
-        dob,
-        gender,
-        password,
-      });
+   const res = await api.post("/api/v1/user/patient/register", {
+  firstName,
+  lastName,
+  email,
+  phone,
+  nic,
+  dob,
+  gender,
+  password,
+  role: "Patient", // ✅ REQUIRED BY BACKEND
+});
+
 
       toast.success(res.data.message);
       setIsAuthenticated(true);
