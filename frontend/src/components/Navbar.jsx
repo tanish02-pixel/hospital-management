@@ -43,6 +43,10 @@ const Navbar = () => {
             <Link to="/about" onClick={() => setShow(!show)}>
               About Us
             </Link>
+           <a href="https://hospital-management-5pho.vercel.app/login" >
+  Dashboard
+</a>
+
           </div>
 
           {isAuthenticated ? (
